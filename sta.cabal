@@ -1,0 +1,30 @@
+cabal-version:      2.4
+name:               STA
+version:            0.1.0.0
+
+synopsis: Haskell code for Streaming Trace Analysis
+
+-- A longer description of the package.
+-- description:
+
+-- A URL where users can report bugs.
+-- bug-reports:
+
+-- The license under which the package is released.
+-- license:
+author:             Chris Misa
+maintainer:         cmisa@cs.uoregon.edu
+
+-- A copyright notice.
+-- copyright:
+-- category:
+-- extra-source-files: CHANGELOG.md
+
+executable main
+  main-is:             Main.hs
+  other-modules:       StreamMP, Packets, Common, BasicQueries
+  -- other-extensions:
+  build-depends:       base >=4.12, vector -any, unagi-chan -any, pcap >=0.4.5.2, bytestring >=0.11.1.0, binary -any, hashable -any, hashtables >=1.2.4.1, containers -any, unordered-containers -any, deepseq -any, monad-loops -any
+  -- hs-source-dirs:
+  default-language:    Haskell2010
+  ghc-options: -O2 -optc-O3 -threaded -rtsopts
