@@ -7,6 +7,7 @@ import Data.Function ((&))
 import System.Environment
 import Data.Word
 import Data.Bits
+import Data.List (intercalate)
 
 import qualified StreamMP as S
 import qualified Packets as P
@@ -18,15 +19,16 @@ import qualified BasicQueries as BQ
 -- Link in new queries here by providing a string query identifier
 -- For ease of reading try to make query identifier match the corresponding function name
 --
-getQuery :: String -> PacketQuery
-getQuery qid =
-    case qid of
-        "totalPacketBytes"    -> BQ.totalPacketBytes
-        "sources"             -> BQ.sources
-        "distinctSources"     -> BQ.distinctSources
-        "distinctTCPSources"  -> BQ.distinctTCPSources
-        "distinctSourcesInfo" -> BQ.distinctSourcesInfo
-        "sourcesAllTrace"     -> BQ.sourcesAllTrace
+queryList :: [(String, PacketQuery)]
+queryList = [
+        ("totalPacketBytes",         BQ.totalPacketBytes),
+        ("sources",                  BQ.sources),
+        ("distinctSources",          BQ.distinctSources),
+        ("distinctTCPSources",       BQ.distinctTCPSources),
+        ("distinctSourcesInfo",      BQ.distinctSourcesInfo),
+        ("sourcesAllTrace",          BQ.sourcesAllTrace),
+        ("distinctSrcsDstsPerEpoch", BQ.distinctSrcsDstsPerEpoch)
+    ]
 
 processPcapFile :: String -> Int -> PacketQuery -> IO ()
 processPcapFile filepath n query = do
@@ -35,13 +37,19 @@ processPcapFile filepath n query = do
     return ()
 
 usage :: String
-usage = "<degree of parallelism> <query identifier> <filepath>"
+usage = "Required arguments: <degree of parallelism> <query identifier> <filepath>\n\n"
+    ++ "Current query identifiers:\n"
+    ++ (fmap fst queryList & intercalate ", ") ++ "\n"
 
 main :: IO ()
 main = do
     args <- getArgs
     case args of
         [n, queryId, filepath] ->
-            let theQuery = getQuery queryId
-            in processPcapFile filepath (read n) theQuery
+            let theQuery = lookup queryId queryList
+            in case theQuery of
+                Just q -> processPcapFile filepath (read n) q
+                Nothing -> do
+                    putStrLn $ "Unknown query identifier: \"" ++ queryId ++ "\""
+                    putStrLn usage
         _ -> putStrLn usage

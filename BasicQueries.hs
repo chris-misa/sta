@@ -13,7 +13,7 @@ import qualified Packets as P
 import Common
 
 -- 
--- Query to copmute total number of packets and bytes in each epoch
+-- Query to compute total number of packets and bytes in each epoch
 --
 totalPacketBytes :: PacketQuery
 totalPacketBytes n s =
@@ -35,7 +35,7 @@ sources n s =
     & S.keyBy n fst snd
     & S.windowByKeyed (floor . (* 1) . fst) snd
     & S.foldKeyedWindowed (\(p, b) (p', b') -> (p + p', b + b')) (0, 0)
-    & S.map (\(t, (s, (p, b))) -> [show t, show t, P.ipv4_to_string s, show p, show b])
+    & S.map (\(t, (s, (p, b))) -> [show t, P.ipv4_to_string s, show p, show b])
     & S.printCSV
 
 -- 
@@ -89,3 +89,28 @@ sourcesAllTrace n s =
     & S.foldKeyed (\(p, b) (p', b') -> (p + p', b + b')) (0, 0)
     & S.map (\(s, (p, b)) -> [P.ipv4_to_string s, show p, show b])
     & S.printCSV
+
+--
+-- Query to compute number of distinct sources and destinations each epoch
+distinctSrcsDstsPerEpoch :: PacketQuery
+distinctSrcsDstsPerEpoch n s =
+    s
+    & S.parallel [srcs, dsts]
+    & S.printCSV
+    where srcs s' =
+            s'
+            & S.keyBy n P.ipv4_src id
+            & S.windowByKeyed (floor . (* 1) . P.timeS) (\_ -> True)
+            & S.foldKeyedWindowed (\p _ -> p) False
+            & S.map (\(t, (_, _)) -> (t, (True, 1 :: Int)))
+            & S.foldKeyedWindowed (+) 0
+            & S.map (\(t, (_, count)) -> [show t, "srcs", show count])
+
+          dsts s' =
+            s'
+            & S.keyBy n P.ipv4_dst id
+            & S.windowByKeyed (floor . (* 1) . P.timeS) (\_ -> True)
+            & S.foldKeyedWindowed (\p _ -> p) False
+            & S.map (\(t, (_, _)) -> (t, (True, 1 :: Int)))
+            & S.foldKeyedWindowed (+) 0
+            & S.map (\(t, (_, count)) -> [show t, "dsts", show count])
